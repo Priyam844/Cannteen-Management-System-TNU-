@@ -173,6 +173,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
       appBar: AppBar(
         title: const Text("Meal Feedback"),
         centerTitle: true,
+        elevation: 0,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -182,29 +183,36 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Card(
                       elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shadowColor: Colors.black12,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(20),
                         child: Column(
                           children: [
                             const Text(
-                              "Submit Feedback",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              "Submit New Review",
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 20),
 
                             /// Meal Dropdown
                             DropdownButtonFormField<int>(
                               value: selectedBookingMealId,
-                              hint: const Text("Select Consumed Meal"),
-                              decoration: const InputDecoration(border: OutlineInputBorder()),
+                              hint: const Text("Select a consumed meal"),
+                              isExpanded: true,
+                              decoration: InputDecoration(
+                                labelText: "Consumed Meals",
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                prefixIcon: const Icon(Icons.restaurant_menu),
+                              ),
                               items: consumedMeals.map((m) {
                                 return DropdownMenuItem<int>(
                                   value: m["id"],
-                                  child: Text(m["label"], overflow: TextOverflow.ellipsis),
+                                  child: Text(m["label"], overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14)),
                                 );
                               }).toList(),
                               onChanged: (value) => setState(() => selectedBookingMealId = value),
@@ -214,9 +222,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
                             /// Rating Section
                             const Text(
-                              "Rate your meal",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              "How was the food?",
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                             ),
+                            const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: List.generate(5, (index) => buildStar(index + 1)),
@@ -226,62 +235,73 @@ class _FeedbackPageState extends State<FeedbackPage> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Text(
-                                  "$rating - ${getRatingLabel(rating)}",
+                                  getRatingLabel(rating).toUpperCase(),
                                   style: TextStyle(
-                                    fontSize: 18, 
+                                    fontSize: 16, 
                                     fontWeight: FontWeight.bold,
                                     color: getRatingColor(rating),
+                                    letterSpacing: 1.2,
                                   ),
                                 ),
                               ),
 
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 25),
 
                             /// Review Text
                             TextField(
                               controller: reviewController,
                               maxLines: 3,
-                              decoration: const InputDecoration(
-                                hintText: "Write your review (optional)",
-                                border: OutlineInputBorder(),
+                              decoration: InputDecoration(
+                                labelText: "Review (Optional)",
+                                hintText: "Share your experience...",
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                alignLabelWithHint: true,
                               ),
                             ),
 
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 25),
 
                             /// Submit Button
                             ElevatedButton(
                               onPressed: isSubmitting ? null : submitReview,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color.fromARGB(255, 140, 9, 48),
+                                backgroundColor: const Color.fromARGB(255, 152, 29, 68),
                                 foregroundColor: Colors.white,
-                                minimumSize: const Size(double.infinity, 50),
+                                minimumSize: const Size(double.infinity, 55),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 2,
                               ),
                               child: isSubmitting 
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text("Submit Review", style: TextStyle(fontSize: 16)),
+                                ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                                : const Text("SUBMIT FEEDBACK", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
                             ),
                           ],
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 35),
 
-                    const Align(
-                      alignment: Alignment.centerLeft,
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4, bottom: 12),
                       child: Text(
-                        "My Past Feedback",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        "Hostel Reviews",
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
 
-                    const SizedBox(height: 10),
-
                     myFeedbacks.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.only(top: 20),
-                            child: Text("No feedback yet", style: TextStyle(color: Colors.grey)),
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 40),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.feedback_outlined, size: 60, color: Colors.grey),
+                                  SizedBox(height: 16),
+                                  Text("No feedback received yet", style: TextStyle(color: Colors.grey, fontSize: 16)),
+                                ],
+                              ),
+                            ),
                           )
                         : ListView.builder(
                             shrinkWrap: true,
@@ -291,18 +311,34 @@ class _FeedbackPageState extends State<FeedbackPage> {
                               var fb = myFeedbacks[index];
                               int r = fb["rating"];
                               return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                   leading: CircleAvatar(
-                                    backgroundColor: getRatingColor(r),
-                                    child: Text(r.toString(), style: const TextStyle(color: Colors.white)),
+                                    backgroundColor: getRatingColor(r).withOpacity(0.1),
+                                    child: Text(r.toString(), style: TextStyle(color: getRatingColor(r), fontWeight: FontWeight.bold)),
                                   ),
-                                  title: Text("Rating: ${getRatingLabel(r)}"),
-                                  subtitle: Text(fb["comment"] ?? "No written review"),
-                                  trailing: Text(fb["created_at"].toString().substring(0, 10)),
+                                  title: Text(
+                                    "${fb["meal_slot"]?.toString().toUpperCase()} - ${fb["combo_name"]}",
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      fb["comment"]?.isEmpty == true ? "No written review" : fb["comment"],
+                                      style: TextStyle(color: fb["comment"]?.isEmpty == true ? Colors.grey : Colors.black87),
+                                    ),
+                                  ),
+                                  trailing: Text(
+                                    fb["created_at"].toString().substring(0, 10),
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
                                 ),
                               );
                             },
                           ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),

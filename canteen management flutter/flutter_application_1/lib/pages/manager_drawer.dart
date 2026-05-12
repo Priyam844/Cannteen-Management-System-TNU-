@@ -100,15 +100,18 @@ class _ManagerDrawerState extends State<ManagerDrawer> {
           ListTile(
             leading: const Icon(Icons.qr_code, size: _iconSize),
             title: const Text('Scan QR'),
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context); // close drawer first
 
-              Navigator.push(
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => const ManagerQRScanPage(),
                 ),
               );
+              
+              // When returning from scanner, refresh the home page if it's currently active
+              ManagerHomePage.refreshKey.currentState?.fetchDashboard();
             },
           ),
           

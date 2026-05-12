@@ -142,7 +142,6 @@ class _ManagerMenuPageState extends State<ManagerMenuPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Combo Name")),
-                TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: "Price"), keyboardType: TextInputType.number),
                 TextField(controller: descCtrl, decoration: const InputDecoration(labelText: "Description")),
                 
                 const SizedBox(height: 10),
@@ -392,7 +391,7 @@ class _ManagerMenuPageState extends State<ManagerMenuPage> {
         return Card(
           child: ListTile(
             title: Text(combo["name"], style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("${combo["meal_type"]} - ₹${combo["price"]}\nItems: ${(combo["items"] as List).map((i)=>i["name"]).join(", ")}"),
+            subtitle: Text("${combo["meal_type"]}\nItems: ${(combo["items"] as List).map((i)=>i["name"]).join(", ")}"),
             isThreeLine: true,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,

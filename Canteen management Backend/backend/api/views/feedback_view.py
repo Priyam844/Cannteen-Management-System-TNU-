@@ -45,8 +45,15 @@ class FeedbackListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Managers can see all feedback for their hostel, students see their own
         user = self.request.user
-        if user.role == 'manager':
-            return Feedback.objects.filter(hostel=user.hostel)
-        return Feedback.objects.filter(user=user)
+        hostel_id = self.request.query_params.get('hostel_id')
+
+        if user.role == 'admin':
+            if hostel_id:
+                return Feedback.objects.filter(hostel_id=hostel_id)
+            return Feedback.objects.all()
+        elif user.role == 'manager' or user.role == 'student':
+            if user.hostel:
+                return Feedback.objects.filter(hostel=user.hostel)
+            return Feedback.objects.none()
+        return Feedback.objects.none()

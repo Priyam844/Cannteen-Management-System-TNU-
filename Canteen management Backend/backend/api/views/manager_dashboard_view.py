@@ -36,11 +36,13 @@ class ManagerDashboardView(APIView):
         ).exclude(status='cancelled').select_related("meal_slot", "combo")
 
         # 🧠 Prepare slot data
+        hostel_timings = user.hostel.slot_timings or {}
+        
         slot_map = {
-            "breakfast": {"name": "Breakfast", "total": total_students, "veg": 0, "non_veg": 0, "consumed": 0, "surplus": 0},
-            "lunch": {"name": "Lunch", "total": total_students, "veg": 0, "non_veg": 0, "consumed": 0, "surplus": 0},
-            "snacks": {"name": "Snacks", "total": total_students, "veg": 0, "non_veg": 0, "consumed": 0, "surplus": 0},
-            "dinner": {"name": "Dinner", "total": total_students, "veg": 0, "non_veg": 0, "consumed": 0, "surplus": 0},
+            "breakfast": {"name": "Breakfast", "time": hostel_timings.get("breakfast", ["08:00", "10:00"]), "total": total_students, "veg": 0, "non_veg": 0, "consumed": 0, "surplus": 0},
+            "lunch": {"name": "Lunch", "time": hostel_timings.get("lunch", ["12:00", "14:00"]), "total": total_students, "veg": 0, "non_veg": 0, "consumed": 0, "surplus": 0},
+            "snacks": {"name": "Snacks", "time": hostel_timings.get("snacks", ["16:00", "17:00"]), "total": total_students, "veg": 0, "non_veg": 0, "consumed": 0, "surplus": 0},
+            "dinner": {"name": "Dinner", "time": hostel_timings.get("dinner", ["19:00", "21:00"]), "total": total_students, "veg": 0, "non_veg": 0, "consumed": 0, "surplus": 0},
         }
 
         for meal in meals:

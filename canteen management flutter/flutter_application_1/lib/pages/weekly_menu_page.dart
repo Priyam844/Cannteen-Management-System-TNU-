@@ -155,13 +155,6 @@ Widget build(BuildContext context) {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(combo["items_text"]),
-        trailing: Text(
-          "₹${combo["price"]}",
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.teal,
-          ),
-        ),
       ),
     );
   }

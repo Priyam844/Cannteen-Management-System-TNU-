@@ -114,8 +114,9 @@ class SendOTPView(APIView):
             )
             return Response({"message": "OTP sent"}, status=200)
 
-        except Exception:
-            return Response({"error": "Email sending failed"}, status=500)
+        except Exception as e:
+            print(f"EMAIL SENDING ERROR: {e}")
+            return Response({"error": f"Email sending failed: {str(e)}"}, status=500)
 
 
 # =========================

@@ -63,7 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final res = await http.post(
-        Uri.parse("${baseUrl}send-otp/"),
+        Uri.parse("${baseUrl}/send-otp/"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"email": emailController.text.trim()}),
       );
@@ -95,7 +95,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final res = await http.post(
-        Uri.parse("${baseUrl}verify-otp/"),
+        Uri.parse("${baseUrl}/verify-otp/"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": emailController.text.trim(),
@@ -144,7 +144,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final res = await http.post(
-        Uri.parse("${baseUrl}register/"),
+        Uri.parse("${baseUrl}/register/"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": emailController.text.trim(),

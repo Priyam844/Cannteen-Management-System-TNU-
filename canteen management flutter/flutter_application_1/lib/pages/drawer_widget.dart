@@ -207,7 +207,10 @@ class _AppDrawerState extends State<AppDrawer> {
               'Logout',
               style: TextStyle(fontSize: globalFontSize, color: Colors.red),
             ),
-            onTap: () {
+            onTap: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.clear();
+              if (!context.mounted) return;
               Navigator.pop(context);
               Navigator.pushAndRemoveUntil(
                 context,

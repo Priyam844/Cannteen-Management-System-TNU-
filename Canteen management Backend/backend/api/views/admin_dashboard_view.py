@@ -56,13 +56,21 @@ class AdminDashboardView(APIView):
 
         # Recent feedback
         recent_feedback = Feedback.objects.order_by('-created_at')[:5]
-        feedback_data = [{
-            "user": f"{fb.user.first_name} {fb.user.last_name}",
-            "rating": fb.rating,
-            "comment": fb.comment,
-            "hostel": fb.hostel.hostel_name,
-            "date": fb.created_at.date()
-        } for fb in recent_feedback]
+        feedback_data = []
+        for fb in recent_feedback:
+            slot_key = fb.booking_meal.meal_slot.slot.lower()
+            timing = fb.hostel.slot_timings.get(slot_key, ["N/A", "N/A"])
+            
+            feedback_data.append({
+                "id": fb.id,
+                "rating": fb.rating,
+                "comment": fb.comment,
+                "hostel": fb.hostel.hostel_name,
+                "meal_slot": fb.booking_meal.meal_slot.slot,
+                "meal_time": f"{timing[0]} - {timing[1]}",
+                "combo_name": fb.combo.name,
+                "date": fb.created_at.date()
+            })
 
         return Response({
             "total_students": total_students,

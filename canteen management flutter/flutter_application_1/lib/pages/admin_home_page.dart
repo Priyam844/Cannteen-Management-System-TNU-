@@ -338,8 +338,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Admin Panel"),
+        centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 152, 29, 68),
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.logout), onPressed: () async {
             final prefs = await SharedPreferences.getInstance();
@@ -359,9 +361,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
           _fetchData();
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: "Dashboard"),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Managers"),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "Reports"),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: "Dashboard"),
+          BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: "Managers"),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart_outlined), label: "Reports"),
         ],
       ),
       floatingActionButton: _currentIndex == 1
@@ -390,46 +392,97 @@ class _AdminHomePageState extends State<AdminHomePage> {
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 1.5,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.6,
             children: [
-              _statCard("Students", dashboardData["total_students"]?.toString() ?? "0", Icons.school, Colors.blue),
-              _statCard("Overall Rating", "${dashboardData["overall_rating"] ?? 0} / 5", Icons.star, Colors.purple),
-              _statCard("Today's Bookings", dashboardData["today_bookings"]?.toString() ?? "0", Icons.book, Colors.green),
-              _statCard("Total Feedback", dashboardData["total_feedback"]?.toString() ?? "0", Icons.feedback, Colors.orange),
+              _statCard("Students", dashboardData["total_students"]?.toString() ?? "0", Icons.school_outlined, Colors.blue),
+              _statCard("Institution Rating", "${dashboardData["overall_rating"] ?? 0} / 5", Icons.star_outline, Colors.amber),
+              _statCard("Today's Bookings", dashboardData["today_bookings"]?.toString() ?? "0", Icons.book_outlined, Colors.green),
+              _statCard("Total Feedback", dashboardData["total_feedback"]?.toString() ?? "0", Icons.feedback_outlined, Colors.orange),
             ],
           ),
-          const SizedBox(height: 20),
-          const Text("Hostel Breakdown (Today)", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
+          const SizedBox(height: 25),
+          const Padding(
+            padding: EdgeInsets.only(left: 4, bottom: 12),
+            child: Text("Hostel Breakdown (Today)", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
           ...(dashboardData["hostels"] as List? ?? []).map((h) => Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            elevation: 1,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 152, 29, 68).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.apartment, color: Color.fromARGB(255, 152, 29, 68), size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(h["name"], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text("${h["students"]} Students | Rating: ${h["avg_rating"]}/5", style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade100),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text("SURPLUS", style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.red)),
+                            Text(h["surplus_today"].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(height: 1),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _breakdownItem("Booked", h["bookings_today"].toString(), Colors.blue),
+                      _breakdownItem("Consumed", h["consumed_today"].toString(), Colors.green),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          )),
+          const SizedBox(height: 25),
+          const Padding(
+            padding: EdgeInsets.only(left: 4, bottom: 12),
+            child: Text("Recent Feedback", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+          ...(dashboardData["recent_feedback"] as List? ?? []).map((fb) => Card(
+            margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
-              title: Text(h["name"], style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("${h["students"]} Students | Rating: ${h["avg_rating"]}/5"),
-                  Text("Booked: ${h["bookings_today"]} | Consumed: ${h["consumed_today"]}"),
-                ],
+              leading: CircleAvatar(
+                backgroundColor: (fb["rating"] ?? 0) >= 4 ? Colors.green.shade100 : (fb["rating"] ?? 0) >= 3 ? Colors.orange.shade100 : Colors.red.shade100,
+                child: Text(fb["rating"].toString(), style: TextStyle(color: (fb["rating"] ?? 0) >= 4 ? Colors.green : (fb["rating"] ?? 0) >= 3 ? Colors.orange : Colors.red, fontWeight: FontWeight.bold)),
               ),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Surplus", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                  Text(h["surplus_today"].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.red)),
-                ],
-              ),
-              isThreeLine: true,
+              title: Text("${fb["meal_slot"]?.toString().toUpperCase()} - ${fb["combo_name"]}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: Text("${fb["comment"]}\nTime: ${fb["meal_time"]}\nHostel: ${fb["hostel"]}", style: const TextStyle(fontSize: 12)),
             ),
           )),
           const SizedBox(height: 20),
-          const Text("Recent Feedback", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ...(dashboardData["recent_feedback"] as List? ?? []).map((fb) => ListTile(
-            leading: CircleAvatar(child: Text(fb["rating"].toString())),
-            title: Text(fb["user"]),
-            subtitle: Text("${fb["comment"]}\n(${fb["hostel"]})"),
-          )),
         ],
       ),
     );
@@ -456,62 +509,65 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   Widget _buildManagers() {
-    return ListView(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      children: [
-        const Text("Hostels & Cutoff Times", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        ...hostels.map((h) => Card(
-          child: ListTile(
-            leading: const Icon(Icons.business, color: Color.fromARGB(255, 152, 29, 68)),
-            title: Text(h["name"], style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("Cutoff Time: ${h["cutoff_time"]}"),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  tooltip: "Edit Cutoff",
-                  icon: const Icon(Icons.edit_calendar, color: Colors.blue),
-                  onPressed: () => _editCutoffTime(h),
-                ),
-                IconButton(
-                  tooltip: "Edit Meal Times",
-                  icon: const Icon(Icons.access_time, color: Colors.green),
-                  onPressed: () => _editMealTimes(h),
-                ),
-              ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Hostels & Cutoff Times", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          ...hostels.map((h) => Card(
+            child: ListTile(
+              leading: const Icon(Icons.business, color: Color.fromARGB(255, 152, 29, 68)),
+              title: Text(h["name"], style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text("Cutoff Time: ${h["cutoff_time"]}"),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: "Edit Cutoff",
+                    icon: const Icon(Icons.edit_calendar, color: Colors.blue),
+                    onPressed: () => _editCutoffTime(h),
+                  ),
+                  IconButton(
+                    tooltip: "Edit Meal Times",
+                    icon: const Icon(Icons.access_time, color: Colors.green),
+                    onPressed: () => _editMealTimes(h),
+                  ),
+                ],
+              ),
+            ),
+          )),
+          const SizedBox(height: 25),
+          const Text("Bulk Student Authorization", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Card(
+            elevation: 0,
+            color: const Color.fromARGB(255, 152, 29, 68).withOpacity(0.05),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color.fromARGB(255, 152, 29, 68))),
+            child: ListTile(
+              leading: const Icon(Icons.upload_file, color: Color.fromARGB(255, 152, 29, 68)),
+              title: const Text("Upload CSV/Excel", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Bulk authorize students for registration"),
+              onTap: _bulkUploadStudents,
             ),
           ),
-        )),
-        const SizedBox(height: 25),
-        const Text("Bulk Student Authorization", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Card(
-          elevation: 0,
-          color: const Color.fromARGB(255, 152, 29, 68).withOpacity(0.05),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color.fromARGB(255, 152, 29, 68))),
-          child: ListTile(
-            leading: const Icon(Icons.upload_file, color: Color.fromARGB(255, 152, 29, 68)),
-            title: const Text("Upload CSV/Excel", style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text("Bulk authorize students for registration"),
-            onTap: _bulkUploadStudents,
-          ),
-        ),
-        const SizedBox(height: 25),
-        const Text("Management Users", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        ...managers.map((m) => Card(
-          child: ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text("${m["first_name"]} ${m["last_name"]}"),
-            subtitle: Text("${m["email"]}\nHostel: ${m["hostel"]}"),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _deleteManager(m["id"]),
+          const SizedBox(height: 25),
+          const Text("Management Users", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          ...managers.map((m) => Card(
+            child: ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.person)),
+              title: Text("${m["first_name"]} ${m["last_name"]}"),
+              subtitle: Text("${m["email"]}\nHostel: ${m["hostel"]}"),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _deleteManager(m["id"]),
+              ),
             ),
-          ),
-        )),
-      ],
+          )),
+        ],
+      ),
     );
   }
 
@@ -575,6 +631,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
       children: [
         Text(val, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
         Text(label, style: TextStyle(color: color)),
+      ],
+    );
+  }
+
+  Widget _breakdownItem(String label, String val, Color color) {
+    return Column(
+      children: [
+        Text(val, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
       ],
     );
   }

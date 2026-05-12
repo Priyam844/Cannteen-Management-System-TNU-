@@ -303,8 +303,6 @@ class _BookMealsPageState extends State<BookMealsPage> {
                 final comboName = combo["name"]?.toString() ?? "";
                 final category = combo["category"]?.toString() ?? "veg";
                 final itemsText = combo["items_text"]?.toString() ?? "";
-                final price =
-                    double.tryParse(combo["price"]?.toString() ?? "0") ?? 0.0;
                 final isSelected =
                     _toInt(selectedMeals[slotKey]?["combo_id"]) == comboId &&
                         comboId != 0;
@@ -381,15 +379,6 @@ class _BookMealsPageState extends State<BookMealsPage> {
                                   ),
                                 ),
                               ],
-                              const SizedBox(height: 6),
-                              Text(
-                                "₹${price % 1 == 0 ? price.toInt() : price}",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.teal,
-                                  fontSize: 13,
-                                ),
-                              ),
                             ],
                           ),
                         ),

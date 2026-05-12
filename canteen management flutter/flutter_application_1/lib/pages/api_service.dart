@@ -9,8 +9,9 @@ class ApiService {
 
   // 🔥 Use your PC IP (works everywhere)
   // static const String baseUrl = "http://10.0.102.241:8000/api";
-  static const String baseUrl = "http://192.168.0.105:8000/api";
+  //static const String baseUrl = "http://192.168.0.105:8000/api";
   // static const String baseUrl = "http://10.106.138.3:8000/api";
+  static const String baseUrl = "http://10.0.65.221:8000/api";
 
 
   ////////////////////////////////////////////////////////////

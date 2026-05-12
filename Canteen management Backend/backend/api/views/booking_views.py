@@ -175,22 +175,26 @@ class MyBookingView(APIView):
         ).prefetch_related("meals__meal_slot", "meals__combo")
 
         result = []
+        hostel_timings = user.hostel.slot_timings or {}
 
         for booking in bookings:
             meals = booking.meals.all()
 
-            data = [
-                {
+            data = []
+            for m in meals:
+                slot_key = m.meal_slot.slot.lower()
+                timing = hostel_timings.get(slot_key, ["N/A", "N/A"])
+                
+                data.append({
                     "id": m.id,
                     "meal_slot_id": m.meal_slot.id,
                     "meal_slot": m.meal_slot.slot,
+                    "meal_time": f"{timing[0]} - {timing[1]}",
                     "day": m.meal_slot.day,
                     "combo": m.combo.name,
                     "combo_id": m.combo.id,
                     "status": m.status
-                }
-                for m in meals
-            ]
+                })
 
             result.append({
                 "qr_uuid": str(booking.qr_uuid),

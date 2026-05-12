@@ -71,10 +71,14 @@ class WeeklyMenuSerializer(serializers.Serializer):
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
+    meal_slot = serializers.CharField(source='booking_meal.meal_slot.slot', read_only=True)
+    combo_name = serializers.CharField(source='combo.name', read_only=True)
+    hostel_name = serializers.CharField(source='hostel.hostel_name', read_only=True)
+
     class Meta:
         model = Feedback
-        fields = ['id', 'booking_meal', 'rating', 'comment', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = ['id', 'booking_meal', 'rating', 'comment', 'meal_slot', 'combo_name', 'hostel_name', 'created_at']
+        read_only_fields = ['id', 'created_at', 'meal_slot', 'combo_name', 'hostel_name']
 
     def validate(self, data):
         user = self.context['request'].user

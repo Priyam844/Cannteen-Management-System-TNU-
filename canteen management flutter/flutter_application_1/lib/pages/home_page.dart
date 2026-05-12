@@ -143,10 +143,6 @@ class _HomePageState extends State<HomePage> {
                             ),
                             title: Text(combo["name"], style: const TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Text(combo["items_text"] ?? "", maxLines: 2, overflow: TextOverflow.ellipsis),
-                            trailing: Text(
-                              "₹${combo["price"]}",
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
-                            ),
                           ),
                         );
                       }).toList(),
@@ -306,7 +302,9 @@ class _HomePageState extends State<HomePage> {
 
       appBar: AppBar(
         title: const Text("Dashboard"),
+        centerTitle: true,
         backgroundColor: Colors.white,
+        elevation: 0,
       ),
 
       body: isLoading
@@ -314,30 +312,39 @@ class _HomePageState extends State<HomePage> {
           : RefreshIndicator(
               onRefresh: fetchBookings,
               child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
                     /// DATE SELECTOR
-                    const Text("Select Date",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4, bottom: 8),
+                      child: Text("Select Date",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
 
-                    const SizedBox(height: 10),
                     buildDateSelector(),
 
                     const SizedBox(height: 25),
 
                     /// TODAY MEALS
-                    const Text("Today's Meals",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-
-                    const SizedBox(height: 10),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4, bottom: 8),
+                      child: Text("Today's Meals",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
 
                     if (todayBookings.isEmpty)
-                      const Text("No meals booked for today"),
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Text("No meals booked for today", style: TextStyle(color: Colors.grey)),
+                        ),
+                      ),
 
                     ...todayBookings.map((b) {
                       final meals = (b["meals"] as List);
@@ -353,8 +360,17 @@ class _HomePageState extends State<HomePage> {
                               Colors.orange.shade400,
                               Colors.orange.shade700
                             ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,33 +399,45 @@ class _HomePageState extends State<HomePage> {
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 8),
+                                    horizontal: 12, vertical: 10),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
                                       _slotIcon(m["meal_slot"]),
-                                      size: 18,
+                                      size: 20,
                                       color: isCancelled ? Colors.grey : (isConsumed ? Colors.green : Colors.orange),
                                     ),
-                                    const SizedBox(width: 10),
+                                    const SizedBox(width: 12),
                                     Expanded(
-                                      child: Text(
-                                        m["meal_slot"].toUpperCase(),
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            decoration: isCancelled ? TextDecoration.lineThrough : null,
-                                            color: isCancelled ? Colors.grey : null),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            m["meal_slot"].toUpperCase(),
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                                decoration: isCancelled ? TextDecoration.lineThrough : null,
+                                                color: isCancelled ? Colors.grey : Colors.black87),
+                                          ),
+                                          if (m["meal_time"] != null)
+                                            Text(
+                                              m["meal_time"],
+                                              style: TextStyle(fontSize: 11, color: isCancelled ? Colors.grey : Colors.grey.shade600),
+                                            ),
+                                        ],
                                       ),
                                     ),
                                     Text(
                                       isCancelled ? "Cancelled" : (isConsumed ? "Consumed" : m["combo"]),
                                       style: TextStyle(
-                                          color: isCancelled ? Colors.red : (isConsumed ? Colors.green : Colors.grey),
-                                          fontWeight: isConsumed || isCancelled ? FontWeight.bold : null),
+                                          fontSize: 14,
+                                          color: isCancelled ? Colors.red : (isConsumed ? Colors.green : Colors.grey.shade700),
+                                          fontWeight: isConsumed || isCancelled ? FontWeight.bold : FontWeight.w500),
                                     ),
                                   ],
                                 ),
@@ -423,14 +451,20 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 25),
 
                     /// TOMORROW MEALS
-                    const Text("Tomorrow's Meals",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-
-                    const SizedBox(height: 10),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4, bottom: 8),
+                      child: Text("Tomorrow's Meals",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
 
                     if (tomorrowBookings.isEmpty)
-                      const Text("No meals booked for tomorrow"),
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Text("No meals booked for tomorrow", style: TextStyle(color: Colors.grey)),
+                        ),
+                      ),
 
                     ...tomorrowBookings.map((b) {
                       final meals = (b["meals"] as List)
@@ -443,13 +477,22 @@ class _HomePageState extends State<HomePage> {
                         margin: const EdgeInsets.only(bottom: 15),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
+                          gradient: const LinearGradient(
                             colors: [
-                              const Color.fromARGB(255, 193, 87, 122),
-                              const Color.fromARGB(255, 197, 110, 151)
+                              Color.fromARGB(255, 193, 87, 122),
+                              Color.fromARGB(255, 197, 110, 151)
                             ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color.fromARGB(255, 193, 87, 122).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,30 +518,32 @@ class _HomePageState extends State<HomePage> {
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 8),
+                                    horizontal: 12, vertical: 10),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
                                       _slotIcon(m["meal_slot"]),
-                                      size: 18,
+                                      size: 20,
                                       color: const Color.fromARGB(255, 121, 2, 48),
                                     ),
-                                    const SizedBox(width: 10),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
                                         m["meal_slot"].toUpperCase(),
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: Colors.black87),
                                       ),
                                     ),
                                     Text(
                                       m["combo"],
                                       style:
-                                          const TextStyle(color: Colors.grey),
+                                          TextStyle(color: Colors.grey.shade700, fontSize: 14, fontWeight: FontWeight.w500),
                                     ),
                                   ],
                                 ),
@@ -513,22 +558,23 @@ class _HomePageState extends State<HomePage> {
 
                     /// ACTION BUTTONS
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _actionButton("Book", Icons.add, () {
+                        _actionButton("Book", Icons.add_circle_outline, () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (_) => const BookMealsPage()),
                           );
                         }),
-                        _actionButton("Cancel", Icons.cancel, () {
+                        _actionButton("Cancel", Icons.cancel_outlined, () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (_) => const CancelMealsPage(),),
                           );
                         }),
-                        _actionButton("QR", Icons.qr_code, () {
+                        _actionButton("QR", Icons.qr_code_scanner, () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -537,6 +583,7 @@ class _HomePageState extends State<HomePage> {
                         }),
                       ],
                     ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),

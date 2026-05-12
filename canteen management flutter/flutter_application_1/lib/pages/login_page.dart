@@ -254,12 +254,12 @@ void login() async {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                         side: BorderSide(
-                          color: _activeColor.withOpacity(0.25),
+                          color: _activeColor.withOpacity(0.2),
                           width: 1.5,
                         ),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -267,15 +267,22 @@ void login() async {
                             /// Animated icon + title
                             AnimatedSwitcher(
                               duration: const Duration(milliseconds: 300),
-                              child: Icon(
-                                _roleIcon,
+                              child: Container(
                                 key: ValueKey(selectedRole),
-                                size: 60,
-                                color: _activeColor,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: _activeColor.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  _roleIcon,
+                                  size: 45,
+                                  color: _activeColor,
+                                ),
                               ),
                             ),
 
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
 
                             AnimatedSwitcher(
                               duration: const Duration(milliseconds: 200),
@@ -283,14 +290,14 @@ void login() async {
                                 "$_roleLabel Login",
                                 key: ValueKey(selectedRole),
                                 style: const TextStyle(
-                                  fontSize: 24,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.1,
                                 ),
                               ),
                             ),
 
-                            const SizedBox(height: 30),
+                            const SizedBox(height: 32),
 
                             /// 🔷 EMAIL
                             TextField(
@@ -298,20 +305,18 @@ void login() async {
                               keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
                                 labelText: "Email",
-                                prefixIcon: const Icon(Icons.email_outlined),
-                                border: const OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.email_outlined, color: _activeColor.withOpacity(0.7)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 focusedBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: _activeColor, width: 2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: _activeColor, width: 2),
                                 ),
-                                labelStyle:
-                                    TextStyle(color: Colors.grey[600]),
-                                floatingLabelStyle:
-                                    TextStyle(color: _activeColor),
+                                labelStyle: TextStyle(color: Colors.grey[600]),
+                                floatingLabelStyle: TextStyle(color: _activeColor, fontWeight: FontWeight.bold),
                               ),
                             ),
 
-                            const SizedBox(height: 15),
+                            const SizedBox(height: 20),
 
                             /// 🔷 PASSWORD
                             TextField(
@@ -319,51 +324,45 @@ void login() async {
                               obscureText: true,
                               decoration: InputDecoration(
                                 labelText: "Password",
-                                prefixIcon: const Icon(Icons.lock_outline),
-                                border: const OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.lock_outline, color: _activeColor.withOpacity(0.7)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 focusedBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: _activeColor, width: 2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: _activeColor, width: 2),
                                 ),
-                                labelStyle:
-                                    TextStyle(color: Colors.grey[600]),
-                                floatingLabelStyle:
-                                    TextStyle(color: _activeColor),
+                                labelStyle: TextStyle(color: Colors.grey[600]),
+                                floatingLabelStyle: TextStyle(color: _activeColor, fontWeight: FontWeight.bold),
                               ),
                             ),
 
-                            const SizedBox(height: 25),
+                            const SizedBox(height: 30),
 
                             /// 🔷 LOGIN BUTTON
                             isLoading
-                                ? CircularProgressIndicator(
-                                    color: _activeColor,
-                                  )
-                                : AnimatedContainer(
-                                    duration: const Duration(milliseconds: 300),
-                                    child: ElevatedButton(
-                                      onPressed: login,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: _activeColor,
-                                        foregroundColor: Colors.white,
-                                        minimumSize:
-                                            const Size(double.infinity, 55),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
+                                ? CircularProgressIndicator(color: _activeColor)
+                                : ElevatedButton(
+                                    onPressed: login,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _activeColor,
+                                      foregroundColor: Colors.white,
+                                      minimumSize: const Size(double.infinity, 55),
+                                      elevation: 4,
+                                      shadowColor: _activeColor.withOpacity(0.4),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: const Text(
-                                        "LOGIN",
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    ),
+                                    child: const Text(
+                                      "LOGIN",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.2,
                                       ),
                                     ),
                                   ),
 
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
 
                             /// 🔷 SIGNUP (student only)
                             if (selectedRole == UserRole.student)
@@ -375,12 +374,12 @@ void login() async {
                                         builder: (_) => const RegisterPage()),
                                   );
                                 },
-                                child: const Text(
+                                child: Text(
                                   "Don't have an account? Sign Up",
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Color.fromARGB(255, 41, 51, 141),
-                                    fontWeight: FontWeight.w500,
+                                    color: Colors.blue.shade800,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),

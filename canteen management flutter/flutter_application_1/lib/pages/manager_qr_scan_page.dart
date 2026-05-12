@@ -4,7 +4,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'api_service.dart';
 
 class ManagerQRScanPage extends StatefulWidget {
-  const ManagerQRScanPage({super.key});
+  final VoidCallback? onScanSuccess;
+  const ManagerQRScanPage({super.key, this.onScanSuccess});
 
   @override
   State<ManagerQRScanPage> createState() => _ManagerQRScanPageState();
@@ -43,6 +44,7 @@ class _ManagerQRScanPageState extends State<ManagerQRScanPage> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        if (widget.onScanSuccess != null) widget.onScanSuccess!();
         _showVerificationResult(
           success: true,
           studentName: data["student"]["name"],
@@ -124,7 +126,7 @@ class _ManagerQRScanPageState extends State<ManagerQRScanPage> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: success ? Colors.green : Colors.red,
                   foregroundColor: Colors.white,

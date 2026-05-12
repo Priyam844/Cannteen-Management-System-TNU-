@@ -63,8 +63,8 @@ class _ManagerFeedbackPageState extends State<ManagerFeedbackPage> {
                             backgroundColor: rating >= 4 ? Colors.green : (rating >= 3 ? Colors.orange : Colors.red),
                             child: Text(rating.toString(), style: const TextStyle(color: Colors.white)),
                           ),
-                          title: Text("Anonymous Student"),
-                          subtitle: Text(fb["comment"] ?? "No written review"),
+                          title: Text("${fb["meal_slot"]?.toString().toUpperCase()} - ${fb["combo_name"]}"),
+                          subtitle: Text(fb["comment"]?.isEmpty == true ? "No written review" : fb["comment"]),
                           trailing: Text(fb["created_at"].toString().substring(0, 10)),
                         ),
                       );
