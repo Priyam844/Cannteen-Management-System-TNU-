@@ -1,0 +1,18 @@
+backend/
+│
+├── manage.py
+├── backend/              # Main config (DON'T touch much)
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+│
+├── api/                  # Your main backend logic (important)
+│   ├── __init__.py
+│   ├── models.py         # Database structure
+│   ├── serializers.py    # Convert data → JSON
+│   ├── views.py          # API logic
+│   ├── urls.py           # API routes
+│   ├── admin.py          # Admin panel config
+│   └── migrations/

@@ -1,0 +1,173 @@
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils.timezone import now
+from datetime import timedelta
+import random
+from django.core.mail import send_mail
+from django.conf import settings
+from django.db import transaction
+from api.models import User, OTP, AllowedUser
+
+# 🔐 LOGIN VIEW
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip().lower()
+        password = request.data.get('password')
+
+        if not email or not password:
+            return Response({"error": "Email and password required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # authenticate() uses the USERNAME_FIELD defined in your User model (email)
+        user = authenticate(request, username=email, password=password)
+
+        if user is None:
+            return Response({"error": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if not user.is_active:
+            return Response({"error": "User account is disabled"}, status=status.HTTP_403_FORBIDDEN)
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "role": user.role,
+                "hostel": user.hostel.name if user.hostel else None,
+            }
+        }, status=status.HTTP_200_OK)
+
+
+# 📧 SEND OTP VIEW
+class SendOTPView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email", "").strip().lower()
+
+        if not email:
+            return Response({"error": "Email required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Check if the user is in the pre-approved list (AllowedUser)
+        if not AllowedUser.objects.filter(email__iexact=email).exists():
+            return Response({"error": "This email is not authorized for registration. Please contact the hostel warden."}, status=status.HTTP_403_FORBIDDEN)
+
+        # 2. Check if the user is already registered in the User table
+        if User.objects.filter(email__iexact=email).exists():
+            return Response({"error": "An account with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. Check if the registration is already marked as used in AllowedUser
+        if AllowedUser.objects.filter(email__iexact=email, is_used=True).exists():
+            return Response({"error": "This email has already been used to create an account."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 4. Anti-spam: Check if an OTP was sent in the last 60 seconds
+        recent_otp = OTP.objects.filter(email__iexact=email, created_at__gte=now() - timedelta(seconds=60)).exists()
+        if recent_otp:
+            return Response({"error": "Please wait 60 seconds before requesting a new OTP."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        # 5. Generate and save OTP
+        otp_code = str(random.randint(100000, 999999))
+        OTP.objects.create(
+            email=email,
+            otp_code=otp_code,
+            expires_at=now() + timedelta(minutes=10)
+        )
+
+        # 6. Send Email
+        try:
+            send_mail(
+                subject="Canteen System - Registration OTP",
+                message=f"Your verification code is: {otp_code}\nThis code will expire in 10 minutes.",
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            return Response({"message": "OTP sent successfully to your email."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Failed to send email. Please check your internet or email settings."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# 📝 REGISTER VIEW
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email", "").strip().lower()
+        otp = request.data.get("otp")
+        password = request.data.get("password")
+        confirm_password = request.data.get("confirm_password")
+        first_name = request.data.get("first_name", "").strip()
+        last_name = request.data.get("last_name", "").strip()
+        
+        name = f"{first_name} {last_name}".strip()
+
+        # Basic Validation
+        if not all([email, otp, password, confirm_password, first_name]):
+            return Response({"error": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if password != confirm_password:
+            return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(password) < 8:
+            return Response({"error": "Password must be at least 8 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify OTP
+        otp_obj = OTP.objects.filter(
+            email__iexact=email,
+            otp_code=otp,
+            is_verified=False,
+            expires_at__gte=now()
+        ).order_by("-created_at").first()
+
+        if not otp_obj:
+            return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Atomic Transaction: Create user and update AllowedUser status together
+        try:
+            with transaction.atomic():
+                # Lock the AllowedUser row for this transaction
+                allowed = AllowedUser.objects.select_for_update().get(email__iexact=email, is_used=False)
+
+                # Create the actual User account
+                user = User.objects.create_user(
+                    username=email, # Django standard
+                    email=email,
+                    password=password,
+                    first_name=first_name, # 👈 Map to model field
+                    last_name=last_name,   # 👈 Map to model field
+                    student_id=stuent_id, # 👈 Map to model field
+                    phone=getattr(allowed, 'phone', ''), # Safely get phone if it exists
+                    hostel=allowed.hostel,
+                    allowed_user=allowed,
+                    role="student"
+
+                    
+
+                    
+                )
+
+                # Mark records as completed
+                otp_obj.is_verified = True
+                otp_obj.save()
+
+                allowed.is_used = True
+                allowed.save()
+
+                return Response({
+                    "message": "Account created successfully! You can now log in.",
+                    "user": {"email": user.email, "name": user.name}
+                }, status=status.HTTP_201_CREATED)
+
+        except AllowedUser.DoesNotExist:
+            return Response({"error": "Registration failed. Email not authorized or already used."}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
