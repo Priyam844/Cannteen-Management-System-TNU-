@@ -5,8 +5,8 @@ from django.utils.timezone import now
 from django.utils import timezone
 from datetime import datetime
 
-from api.models import Booking, BookingMeal
-
+from api.models import Booking, BookingMeal, BookingItem, EventPass, InstitutionalEvent
+from django.db import transaction
 
 class ServeMealQRScanView(APIView):
     permission_classes = [IsAuthenticated]
@@ -37,103 +37,122 @@ class ServeMealQRScanView(APIView):
 
     def post(self, request):
         user = request.user
-
-        # Only manager allowed
         if user.role != "manager":
             return Response({"error": "Access denied"}, status=403)
 
         if not user.hostel:
-            return Response(
-                {"error": "Manager has no hostel assigned"},
-                status=400
-            )
+            return Response({"error": "Manager has no hostel assigned"}, status=400)
 
         qr_uuid = request.data.get("qr_uuid")
-
         if not qr_uuid:
             return Response({"error": "QR is required"}, status=400)
 
-        # Detect slot
         slot = self.get_current_slot(user.hostel)
-
         if not slot:
-            return Response(
-                {"error": "No active meal slot right now"},
-                status=400
-            )
+            return Response({"error": "No active meal slot right now"}, status=400)
 
-        # Get booking
+        # 1. Check for Standard Booking
         try:
             booking = Booking.objects.select_related("user").get(qr_uuid=qr_uuid)
+            return self._serve_booking(booking, slot, user.hostel)
         except Booking.DoesNotExist:
-            return Response({"error": "Invalid QR code"}, status=404)
+            pass
 
-        # Hostel validation
-        if not booking.user.hostel or booking.user.hostel != user.hostel:
-            return Response(
-                {"error": "QR does not belong to your hostel"},
-                status=403
-            )
-
-        # Date validation
-        if booking.date != now().date():
-            return Response(
-                {"error": "QR is not valid for today"},
-                status=400
-            )
-
-        # IMPORTANT FIX: match slot + booking day
-        booking_day = booking.date.strftime("%A")
-
-        # Get meal
+        # 2. Check for Event Pass
         try:
-            meal = BookingMeal.objects.select_related(
-                "meal_slot",
-                "combo",
-                "booking__user"
-            ).get(
-                booking=booking,
-                meal_slot__slot=slot,
-                meal_slot__day=booking_day
-            )
-        except BookingMeal.DoesNotExist:
-            return Response(
-                {"error": f"No booking found for {slot}"},
-                status=404
-            )
+            event_pass = EventPass.objects.select_related("event").get(qr_uuid=qr_uuid)
+            return self._serve_event_pass(event_pass, slot, user.hostel)
+        except EventPass.DoesNotExist:
+            pass
 
-        # Status checks
-        if meal.status == "cancelled":
-            return Response(
-                {"error": f"{slot.capitalize()} meal was cancelled"},
-                status=400
-            )
+        return Response({"error": "Invalid QR code"}, status=404)
 
-        if meal.status == "consumed":
-            return Response(
-                {"error": f"{slot.capitalize()} already served"},
-                status=400
-            )
+    def _serve_booking(self, booking, slot, hostel):
+        if booking.date != timezone.now().date():
+            return Response({"error": "QR is not valid for today"}, status=400)
 
-        if meal.status == "expired":
-            return Response(
-                {"error": f"{slot.capitalize()} meal expired"},
-                status=400
-            )
+        booking_day = booking.date.strftime("%A")
+        meals = BookingMeal.objects.filter(
+            booking=booking, meal_slot__slot=slot,
+            meal_slot__day=booking_day, meal_slot__hostel=hostel
+        ).select_related("combo")
 
-        # Mark consumed
-        meal.status = "consumed"
-        meal.save()
+        items = BookingItem.objects.filter(
+            booking=booking, meal_slot__slot=slot,
+            meal_slot__day=booking_day, meal_slot__hostel=hostel
+        ).select_related("item")
+
+        if not meals.exists() and not items.exists():
+            return Response({"error": f"No items found for {slot} at this hostel"}, status=404)
+
+        if not meals.filter(status='booked').exists() and not items.filter(status='booked').exists():
+            return Response({"error": f"All items for {slot} already served or cancelled"}, status=400)
+
+        delivered_list = []
+        with transaction.atomic():
+            for m in meals:
+                if m.status == 'booked':
+                    m.status = 'consumed'
+                    m.save()
+                    
+                    # Add combo name
+                    delivered_list.append(f"Combo: {m.combo.name} (x{m.quantity})")
+                    
+                    # Add specific items within this combo
+                    for mi in m.meal_items.all():
+                        delivered_list.append(f"  - {mi.item.name} (x{mi.quantity})")
+                    
+                    if m.guest_quantity > 0:
+                        delivered_list.append(f"Guest Combo: {m.combo.name} (x{m.guest_quantity})")
+                        for mi in m.meal_items.all():
+                             delivered_list.append(f"  - {mi.item.name} (x{mi.quantity})")
+
+            for i in items:
+                if i.status == 'booked':
+                    i.status = 'consumed'
+                    i.save()
+                    delivered_list.append(f"{i.item.name} (x{i.quantity})")
+                    if i.guest_quantity > 0:
+                        delivered_list.append(f"Guest: {i.item.name} (x{i.guest_quantity})")
 
         return Response({
-            "message": f"{slot.capitalize()} meal served successfully",
+            "message": f"{slot.capitalize()} items served successfully",
+            "type": "student",
             "student": {
                 "email": booking.user.email,
                 "name": f"{booking.user.first_name} {booking.user.last_name}".strip()
             },
-            "meal": {
-                "slot": slot,
-                "combo": meal.combo.name,
-                "type": meal.combo.category
-            }
+            "items": delivered_list
+        }, status=200)
+
+    def _serve_event_pass(self, event_pass, slot, hostel):
+        if not event_pass.event.is_active:
+            return Response({"error": "Event is no longer active"}, status=400)
+
+        # 🍽️ Check if slot is allowed for this pass
+        if event_pass.meal_slots and slot.lower() not in [s.lower() for s in event_pass.meal_slots]:
+            return Response({"error": f"This pass is not valid for {slot.capitalize()}"}, status=400)
+
+        now = timezone.now()
+        if event_pass.valid_from and now < event_pass.valid_from:
+            return Response({"error": "Pass is not yet valid"}, status=400)
+        if event_pass.valid_until and now > event_pass.valid_until:
+            return Response({"error": "Pass has expired"}, status=400)
+
+        if event_pass.is_used:
+            return Response({"error": f"Pass already used at {event_pass.consumed_at}"}, status=400)
+
+        with transaction.atomic():
+            event_pass.is_used = True
+            event_pass.consumed_at = now
+            event_pass.save()
+
+        return Response({
+            "message": "Guest pass verified successfully",
+            "type": "guest",
+            "guest": {
+                "name": event_pass.guest_name,
+                "event": event_pass.event.name
+            },
+            "items": [f"Standard Event Meal for {slot.capitalize()}"]
         }, status=200)

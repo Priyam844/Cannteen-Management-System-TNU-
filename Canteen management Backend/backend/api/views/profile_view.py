@@ -2,7 +2,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
-from ..serializers import UserUpdateSerializer
+from ..models import Transaction
+from ..serializers import UserUpdateSerializer, TransactionSerializer
+
+class TransactionListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        transactions = Transaction.objects.filter(user=request.user).order_by('-created_at')
+        serializer = TransactionSerializer(transactions, many=True)
+        return Response(serializer.data)
 
 
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -22,6 +31,9 @@ class ProfileView(APIView):
                 "student_id": user.student_id,
                 "phone": user.phone,
                 "hostel": user.hostel.hostel_name if user.hostel else None,
+                "hostel_id": user.hostel.id if user.hostel else None,
+                "wallet_balance": float(user.wallet_balance),
+                "role": user.role,
                 "profile_picture": request.build_absolute_uri(user.profile_picture.url) if user.profile_picture else None,
             }, status=HTTP_200_OK)
 

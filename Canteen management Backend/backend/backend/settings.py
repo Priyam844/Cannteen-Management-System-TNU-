@@ -12,7 +12,7 @@ SECRET_KEY = 'django-insecure-(9d+!$y-9-d(&!kr4$l#bxyfrkxcn_=@*@g9h)wegbqt8+y#ib
 DEBUG = True
 
 # Added 10.0.2.2 for Android Emulator compatibility
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.0.2.2', '10.0.65.221', '192.168.0.105','10.106.138.3']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.0.2.2', '10.0.22.97', '192.168.0.105','192.168.0.119']
 #ALLOWED_HOSTS = ['*']  # For development only, restrict in production
 
 
@@ -105,9 +105,9 @@ SIMPLE_JWT = {
 # --- Internationalization ---
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'  <- REMOVED REDUNDANT
 USE_I18N = True
-USE_TZ = True
+# USE_TZ = True      <- REMOVED REDUNDANT
 
 # --- Static files ---
 

@@ -8,9 +8,9 @@ class StudentListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'manager':
-            return User.objects.filter(hostel=user.hostel, role='student')
+            return User.objects.filter(hostel=user.hostel, role__in=['student', 'faculty', 'staff'])
         elif user.role == 'admin':
-            return User.objects.filter(role='student')
+            return User.objects.filter(role__in=['student', 'faculty', 'staff'])
         return User.objects.none()
 
     def list(self, request, *args, **kwargs):

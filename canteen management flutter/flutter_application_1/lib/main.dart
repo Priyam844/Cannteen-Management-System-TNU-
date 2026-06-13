@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'pages/login_page.dart';
-import 'pages/home_page.dart';
-import 'pages/manager_home_page.dart';
-import 'pages/admin_home_page.dart';
+import 'package:flutter_application_1/pages/auth/login_page.dart';
+import 'package:flutter_application_1/pages/student/student_home_page.dart';
+import 'package:flutter_application_1/pages/manager/manager_home_page.dart';
+import 'package:flutter_application_1/pages/admin/admin_home_page.dart';
+import 'package:flutter_application_1/pages/faculty/faculty_home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,8 +44,10 @@ class MyApp extends StatelessWidget {
       return const ManagerHomePage();
     } else if (role == "admin") {
       return const AdminHomePage();
+    } else if (role == "faculty") {
+      return const FacultyHomePage();
     } else {
-      return const HomePage();
+      return const StudentHomePage();
     }
   }
 }

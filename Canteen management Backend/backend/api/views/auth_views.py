@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.timezone import now
@@ -11,7 +11,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 import random
 
-from api.models import User, OTP, AllowedUser
+from api.models import User, OTP, AllowedUser, Hostel
 from django.contrib.auth import get_user_model
 
 # =========================
@@ -71,6 +71,32 @@ class LoginView(APIView):
 # =========================
 # 📧 SEND OTP
 # =========================
+class HostelListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        
+        # 🛡️ Role-based Filtering
+        if user.role == 'student':
+            if user.hostel:
+                hostels = Hostel.objects.filter(id=user.hostel.id)
+            else:
+                hostels = Hostel.objects.none()
+        elif user.role == 'faculty':
+            # Faculty can see all hostels except those explicitly excluded for them
+            hostels = Hostel.objects.filter(excluded_for_faculty=False)
+        else:
+            # Managers, Admins, etc. see all
+            hostels = Hostel.objects.all()
+
+        data = [{
+            "id": h.id,
+            "name": h.hostel_name,
+            "cutoff": h.booking_cutoff_time.strftime("%H:%M")
+        } for h in hostels]
+        return Response(data)
+
 class SendOTPView(APIView):
     permission_classes = [AllowAny]
 
@@ -197,7 +223,7 @@ class RegisterView(APIView):
                     phone=getattr(allowed, "phone", ""),
                     hostel=allowed.hostel,
                     allowed_user=allowed,
-                    role="student"
+                    role=allowed.role  # 🚀 Use role from AllowedUser
                 )
 
                 allowed.is_used = True

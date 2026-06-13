@@ -1,8 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from api.models import MealSlot, Combo, Item
+from api.models import MealSlot, Combo, Item, DailyMenu, Hostel
 from api.serializers import ItemSerializer, ComboSerializer
+from django.utils import timezone
+from datetime import timedelta
 
 
 class WeeklyMenuView(APIView):
@@ -11,73 +13,107 @@ class WeeklyMenuView(APIView):
     def get(self, request):
         try:
             user = request.user
+            hostel_id = request.query_params.get("hostel_id")
+            
+            # Requirement 12: Inter-hostel booking - allow viewing menu of other hostels
+            if hostel_id:
+                target_hostel = Hostel.objects.filter(id=hostel_id).first()
+            else:
+                target_hostel = user.hostel
 
-            if not user.hostel:
+            if not target_hostel:
                 return Response({
                     "status": "error",
-                    "message": "User is not assigned to any hostel"
+                    "message": "Hostel not found"
                 }, status=400)
 
-            meal_slots = MealSlot.objects.filter(
-                hostel=user.hostel
-            ).prefetch_related('combos__items').order_by('day')
-
-            weekly_menu = {}
-
-            days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            # We'll return menu for next 14 days
+            current_date = timezone.localtime().date()
+            dates = [current_date + timedelta(days=i) for i in range(14)]
+            
+            result = []
             slot_order = {'breakfast': 1, 'lunch': 2, 'snacks': 3, 'dinner': 4}
 
-            for slot in meal_slots:
-                day = slot.day
+            for d in dates:
+                day_name = d.strftime('%A')
+                day_data = {
+                    "date": str(d),
+                    "day": day_name,
+                    "slots": []
+                }
 
-                if day not in weekly_menu:
-                    weekly_menu[day] = {
-                        'day': day,
-                        'slots': {}
+                # Get regular slots for this day
+                slots = MealSlot.objects.filter(hostel=target_hostel, day=day_name).prefetch_related('combos__items')
+                
+                for s in sorted(slots, key=lambda x: slot_order.get(x.slot.lower(), 99)):
+                    slot_info = {
+                        "id": s.id,
+                        "slot": s.slot,
+                        "combos": [],
+                        "items": []
                     }
 
-                if slot.slot not in weekly_menu[day]['slots']:
-                    weekly_menu[day]['slots'][slot.slot] = {
-                        'id': slot.id,      # ← the fix
-                        'slot': slot.slot,
-                        'combos': []
-                    }
+                    # Check for DailyMenu override
+                    daily_override = DailyMenu.objects.filter(hostel=target_hostel, date=d, slot=s.slot).first()
+                    
+                    if daily_override:
+                        combos = daily_override.combos.filter(is_active=True)
+                        items = daily_override.items.filter(is_active=True)
+                    else:
+                        combos = s.combos.filter(is_active=True)
+                        items = s.items.filter(is_active=True)
 
-                combos = slot.combos.filter(is_active=True)
-
-                for combo in combos:
-                    items = combo.items.all()
-
-                    weekly_menu[day]['slots'][slot.slot]['combos'].append({
-                        "id": combo.id,
-                        "name": combo.name,
-                        "price": float(combo.price),
-                        "category": combo.category,
-                        "description": combo.description,
-                        "items": [
-                            {
-                                "id": item.id,
-                                "name": item.name,
-                                "is_veg": item.is_veg
-                            }
-                            for item in items
-                        ],
-                        "items_text": ", ".join([item.name for item in items])
-                    })
-
-            result = []
-
-            for day in days_order:
-                if day in weekly_menu:
-                    day_data = weekly_menu[day]
-                    day_data['slots'] = sorted(
-                        day_data['slots'].values(),
-                        key=lambda x: slot_order.get(x['slot'], 99)
-                    )
-                    result.append(day_data)
+                    for combo in combos:
+                        slot_info["combos"].append({
+                            "id": combo.id,
+                            "name": combo.name,
+                            "price": float(combo.price),
+                            "faculty_price": float(combo.faculty_price),
+                            "staff_price": float(combo.staff_price),
+                            "guest_price": float(combo.guest_price),
+                            "description": combo.description,
+                            "items_text": ", ".join([it.name for it in combo.items.all()]),
+                            "items_list": [
+                                {
+                                    "id": it.id, 
+                                    "name": it.name, 
+                                    "price": float(it.price),
+                                    "faculty_price": float(it.faculty_price),
+                                    "staff_price": float(it.staff_price),
+                                    "guest_price": float(it.guest_price),
+                                    "is_veg": it.is_veg
+                                }
+                                for it in combo.items.all()
+                            ]
+                        })
+                    
+                    for item in items:
+                        slot_info["items"].append({
+                            "id": item.id,
+                            "name": item.name,
+                            "price": float(item.price),
+                            "faculty_price": float(item.faculty_price),
+                            "staff_price": float(item.staff_price),
+                            "guest_price": float(item.guest_price),
+                            "is_veg": item.is_veg,
+                            "description": item.description
+                        })
+                    
+                    # If no override, maybe we want to allow ordering ANY active item?
+                    # Requirement 10: order any menu item multiple times.
+                    # We can include a general list of available items if requested, 
+                    # but for now, we'll just include items specifically assigned to the slot.
+                    
+                    day_data["slots"].append(slot_info)
+                
+                result.append(day_data)
 
             return Response({
                 "status": "success",
+                "hostel_timings": target_hostel.slot_timings,
+                "booking_cutoff_time": target_hostel.booking_cutoff_time.strftime("%H:%M") if target_hostel.booking_cutoff_time else "14:00",
+                "cancellation_cutoff_time": target_hostel.cancellation_cutoff_time.strftime("%H:%M") if target_hostel.cancellation_cutoff_time else "16:00",
+                "late_booking_lead_time_hours": target_hostel.late_booking_lead_time_hours,
                 "data": result
             })
 
@@ -86,6 +122,34 @@ class WeeklyMenuView(APIView):
                 "status": "error",
                 "message": str(e)
             }, status=500)
+
+class DailyMenuCRUDView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role != 'manager':
+            return Response({"error": "Access denied"}, status=403)
+        
+        hostel = request.user.hostel
+        date_str = request.data.get("date")
+        slot = request.data.get("slot")
+        combo_ids = request.data.get("combo_ids", [])
+        item_ids = request.data.get("item_ids", [])
+
+        if not date_str or not slot:
+            return Response({"error": "date and slot required"}, status=400)
+
+        try:
+            daily_menu, _ = DailyMenu.objects.update_or_create(
+                hostel=hostel,
+                date=date_str,
+                slot=slot
+            )
+            daily_menu.combos.set(combo_ids)
+            daily_menu.items.set(item_ids)
+            return Response({"message": "Daily menu updated successfully"})
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
 
 
 class ItemCRUDView(APIView):
@@ -195,7 +259,8 @@ class UpdateMealSlotView(APIView):
             return Response({"error": "Access denied"}, status=403)
 
         slot_id = request.data.get("slot_id")
-        combo_ids = request.data.get("combo_ids", []) # List of IDs
+        combo_ids = request.data.get("combo_ids", []) 
+        item_ids = request.data.get("item_ids", [])
 
         if not slot_id:
             return Response({"error": "slot_id required"}, status=400)
@@ -211,8 +276,14 @@ class UpdateMealSlotView(APIView):
             if combos.count() != len(combo_ids):
                 return Response({"error": "Invalid combo IDs"}, status=400)
 
+            # Validate items are active
+            items = Item.objects.filter(id__in=item_ids, is_active=True)
+            if items.count() != len(item_ids):
+                 return Response({"error": "Invalid or inactive item IDs"}, status=400)
+
             slot.combos.set(combos)
-            return Response({"message": "Menu updated successfully"})
+            slot.items.set(items)
+            return Response({"message": "Menu template updated successfully"})
 
         except MealSlot.DoesNotExist:
             return Response({"error": "Slot not found"}, status=404)

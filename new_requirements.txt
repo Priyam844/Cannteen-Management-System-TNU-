@@ -1,0 +1,28 @@
+Revised Functional Requirements [Review 1] 
+Intelligent Canteen Management System
+
+The following changes and enhancements are recommended for the system.
+1. Menu Management
+1.	The system shall display meal-wise menu items for breakfast, lunch, snacks, and dinner.
+2.	The system shall allow administrators to modify menu items on a daily or meal-wise basis.
+3.	The system shall assign and display the price of each menu item.
+2. Student Wallet and Billing
+4.	The student dashboard shall display a prepaid wallet containing the total semester meal balance.
+5.	The system shall automatically deduct or refund the corresponding amount based on meal booking confirmation or cancellation.
+6.	The system shall display the total cost of booked items and the updated wallet balance after every transaction.
+3. Meal Booking and Ordering
+7.	Students shall be allowed to book meals up to two days in advance.
+8.	The system shall accept meal bookings until 2:00 PM, two days prior to the scheduled meal.
+9.	The system shall allow meal cancellations until 4:00 PM, two days prior to the scheduled meal.
+10.	Students shall be allowed to order any menu item multiple times without quantity restrictions.
+11.	Students shall be allowed to opt for meals up to two hours before serving time, even if they did not book the meal two days earlier.
+12.	Students shall be allowed to avail meals from any hostel canteen irrespective of their assigned hostel.
+4. QR-Based Meal Verification
+13.	The system shall generate a QR code containing the selected menu items for meal verification and delivery purposes.
+5. Administrative Monitoring and Analytics
+14.	The admin dashboard shall display the total number of plates ordered and the total number of plates delivered.
+15.	The system shall generate item-wise analytical graphs and reports to support demand analysis and operational monitoring.
+6. Future Scope Considerations
+16.	The system may allow students to register and book meals for invited guests. Guest meal charges can be deducted directly from the student’s wallet or processed through separate payment options.
+17.	The system may be extended to support faculty and staff members with dedicated login credentials, wallet/payment facilities, and meal booking functionalities.
+18.	The system may include provisions for managing special guest invitees during institutional events, conferences, seminars, or official visits. Administrators may generate temporary meal access and QR-based verification for such guests.

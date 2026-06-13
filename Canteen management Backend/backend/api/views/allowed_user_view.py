@@ -24,6 +24,7 @@ class AllowedUserListView(generics.ListCreateAPIView):
             "id": a.id,
             "email": a.email,
             "phone": a.phone,
+            "role": a.role,
             "is_used": a.is_used,
             "created_at": a.created_at
         } for a in queryset]
@@ -36,13 +37,14 @@ class AllowedUserListView(generics.ListCreateAPIView):
         
         email = request.data.get("email")
         phone = request.data.get("phone")
+        role = request.data.get("role", "student") # Default to student
         
         if not email or not phone:
             return Response({"error": "Email and phone required"}, status=400)
             
         hostel = user.hostel if user.role == 'manager' else None
         if user.role == 'admin':
-             # Admin must provide hostel_id if they want to specify one
+             # Admin must provide hostel_id
              hostel_id = request.data.get("hostel_id")
              if hostel_id:
                  from ..models import Hostel
@@ -53,7 +55,7 @@ class AllowedUserListView(generics.ListCreateAPIView):
 
         allowed, created = AllowedUser.objects.get_or_create(
             email=email,
-            defaults={"phone": phone, "hostel": hostel}
+            defaults={"phone": phone, "hostel": hostel, "role": role}
         )
         
         if not created:
