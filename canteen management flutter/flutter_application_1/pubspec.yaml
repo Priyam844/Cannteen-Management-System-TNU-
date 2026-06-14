@@ -55,7 +55,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "TNU-CMS"
   ios: true
-  image_path: "assets/images/TNU.png"
+  image_path: "assets/images/tnu.png"
   # Optional: Prevents transparent background bugs on iOS
   remove_alpha_ios: true 
 
