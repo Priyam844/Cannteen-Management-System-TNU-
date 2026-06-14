@@ -12,7 +12,7 @@ SECRET_KEY = 'django-insecure-(9d+!$y-9-d(&!kr4$l#bxyfrkxcn_=@*@g9h)wegbqt8+y#ib
 DEBUG = True
 
 # Added 10.0.2.2 for Android Emulator compatibility
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.0.2.2', '10.0.22.97', '192.168.0.105','192.168.0.119']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.0.2.2', '10.0.22.97', '192.168.0.105','.ngrok-free.app']
 #ALLOWED_HOSTS = ['*']  # For development only, restrict in production
 
 

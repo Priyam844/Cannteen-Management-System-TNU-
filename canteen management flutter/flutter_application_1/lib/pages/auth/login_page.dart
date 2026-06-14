@@ -176,11 +176,11 @@ void login() async {
                   Column(
                     children: [
                       SizedBox(
-                        height: 70,
-                        child: Image.asset(
-                          'assets/images/tnu1.png',
-                          fit: BoxFit.contain,
-                        ),
+                       height: 70,
+                       child: Image.asset(
+                         'assets/images/TNU.png',
+                         fit: BoxFit.contain,
+                       ),
                       ),
                       const SizedBox(height: 10),
                       const Text(
