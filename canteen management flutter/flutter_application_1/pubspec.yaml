@@ -79,7 +79,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/TNU.png
+    - assets/images/tnu.png
     - assets/images/tnu.svg
     - assets/images/tnu1.png
   #   - images/a_dot_burr.jpeg
